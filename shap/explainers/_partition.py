@@ -19,7 +19,7 @@ from .. import links
 
 class Partition(Explainer):
     
-    def __init__(self, model, masker, *, partition_tree=None, output_names=None, link=links.identity):
+    def __init__(self, model, masker, *, partition_tree=None, output_names=None, link=links.identity, model_kwargs=None):
         """ Uses the Partition SHAP method to explain the output of any function.
 
         Partition SHAP computes Shapley values recursively through a hierarchy of features, this
@@ -65,7 +65,7 @@ class Partition(Explainer):
         See :ref:`Partition Explainer Examples <partition_explainer_examples>`
         """
 
-        super(Partition, self).__init__(model, masker, algorithm="partition", output_names = output_names)
+        super(Partition, self).__init__(model, masker, algorithm="partition", output_names = output_names, model_kwargs = model_kwargs)
 
         warnings.warn("explainers.Partition is still in an alpha state, so use with caution...")
         
@@ -83,7 +83,7 @@ class Partition(Explainer):
         self.input_shape = masker.shape[1:] if hasattr(masker, "shape") and not callable(masker.shape) else None
         # self.output_names = output_names
 
-        self.model = lambda x: np.array(model(x))
+        self.model = lambda x, **kwargs: np.array(model(x,**kwargs))
         self.expected_value = None
         self._curr_base_value = None
         if getattr(self.masker, "clustering", None) is None:
@@ -112,12 +112,12 @@ class Partition(Explainer):
         """
 
         # build a masked version of the model for the current input sample
-        fm = MaskedModel(self.model, self.masker, self.link, *row_args)
+        fm = MaskedModel(self.model, self.model_kwargs, self.masker, self.link, *row_args)
 
         # make sure we have the base value and current value outputs
         M = len(fm)
         m00 = np.zeros(M, dtype=np.bool)
-        if self._curr_base_value is None or getattr(self.masker, "fixed_background", False):
+        if self._curr_base_value is None or getattr(self.masker, "fixed_background", False) or (self.masker.mask_token is None):
             self._curr_base_value = fm(m00.reshape(1,-1))[0]
         f11 = fm(~m00.reshape(1,-1))[0]
 

@@ -48,7 +48,7 @@ class Text(Masker):
         
         if self.output_type == "string":
             if self.mask_token is None:
-                out = self._segments_s[mask]
+                out = np.array(self._segments_s)[mask]
             else:
                 out = np.array([self._segments_s[i] if mask[i] else self.mask_token_str for i in range(len(mask))])
 
