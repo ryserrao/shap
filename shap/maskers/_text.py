@@ -16,14 +16,19 @@ class Text(Masker):
         null_tokens = tokenizer.encode("")
         self.output_type = output_type
         
-        
-        assert len(null_tokens) % 2 == 0, "An odd number of boundary tokens are added to the null string!"
-        self.keep_prefix = len(null_tokens) // 2
-        self.keep_suffix = len(null_tokens) // 2
-        self.prefix_strlen = len(tokenizer.decode(null_tokens[:self.keep_prefix]))
-        self.suffix_strlen = len(tokenizer.decode(null_tokens[-self.keep_suffix:]))
+        if len(null_tokens) == 1:
+            self.keep_prefix = 0
+            self.keep_suffix = 1
+            self.prefix_strlen = 0
+            self.suffix_strlen = len(tokenizer.decode(null_tokens[-self.keep_suffix:]))
+        else:
+            assert len(null_tokens) % 2 == 0, "An odd number of boundary tokens are added to the null string!"
+            self.keep_prefix = len(null_tokens) // 2
+            self.keep_suffix = len(null_tokens) // 2
+            self.prefix_strlen = len(tokenizer.decode(null_tokens[:self.keep_prefix]))
+            self.suffix_strlen = len(tokenizer.decode(null_tokens[-self.keep_suffix:]))
         if mask_token == "auto":
-            if hasattr(self.tokenizer, "mask_token_id"):
+            if hasattr(self.tokenizer, "mask_token_id") and (self.tokenizer.mask_token_id is not None):
                 self.mask_token = self.tokenizer.mask_token_id
                 self.mask_token_str = self.tokenizer.decode([self.tokenizer.mask_token_id])#[self.prefix_strlen:-self.suffix_strlen]
             else:
@@ -53,7 +58,7 @@ class Text(Masker):
                 out = np.array([self._segments_s[i] if mask[i] else self.mask_token_str for i in range(len(mask))])
 
             if safe_isinstance(self.tokenizer, "transformers.tokenization_utils.PreTrainedTokenizer"):
-                out = self.tokenizer.convert_tokens_to_string(out)
+                out = self.tokenizer.convert_tokens_to_string(out.tolist())
             elif safe_isinstance(self.tokenizer, "transformers.tokenization_utils_fast.PreTrainedTokenizerFast"):
                 out = "".join(out)
         else:
@@ -115,6 +120,8 @@ class Text(Masker):
     def clustering(self, s):
         self._update_s_cache(s)
         decoded_x = [self.tokenizer.decode([v]) for v in self._tokenized_s]
+        if self.keep_suffix>0 and len(decoded_x[-1])==0:
+            decoded_x[-1] = '</s>'
         pt = partition_tree(decoded_x)
         #self._mark_uninvertable(pt)
         return pt

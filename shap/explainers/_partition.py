@@ -117,7 +117,7 @@ class Partition(Explainer):
         # make sure we have the base value and current value outputs
         M = len(fm)
         m00 = np.zeros(M, dtype=np.bool)
-        if self._curr_base_value is None or getattr(self.masker, "fixed_background", False) or (self.masker.mask_token is None):
+        if self._curr_base_value is None or getattr(self.masker, "fixed_background", False):
             self._curr_base_value = fm(m00.reshape(1,-1))[0]
         f11 = fm(~m00.reshape(1,-1))[0]
 
@@ -223,10 +223,11 @@ class Partition(Explainer):
                     m00, f00, f11, ind, weight = q.get()[2]
                     self.dvalues[ind] += (f11 - f00) * weight
                 break
-
+            print(f'Index in batch: {ind}')
             # create a batch of work to do
             batch_args = []
             batch_masks = []
+            highlight_marginal_text_mask = []
             while not q.empty() and len(batch_masks) < batch_size and eval_count < npartitions:
                 
                 # get our next set of arguments
@@ -258,12 +259,15 @@ class Partition(Explainer):
                 
                 batch_args.append((m00, m10, m01, f00, f11, ind, lind, rind, weight))
                 batch_masks.append(m10)
+                highlight_marginal_text_mask.append(m10 ^ m00)
                 batch_masks.append(m01)
+                highlight_marginal_text_mask.append(m01 ^ m00)
             
             batch_masks = np.array(batch_masks)
                 
             # run the batch
             if len(batch_args) > 0:
+                fm.model_kwargs_params['text_highlight_mask'] = highlight_marginal_text_mask
                 fout = fm(batch_masks)
                 if output_indexes is not None:
                     fout = fout[:,output_indexes]
@@ -292,7 +296,7 @@ class Partition(Explainer):
                     self.dvalues[ind] += (f11 - f10 - f01 + f00) * weight # leave the interaction effect on the internal node
                 elif fixed_context == 1:
                     self.dvalues[ind] -= (f11 - f10 - f01 + f00) * weight # leave the interaction effect on the internal node
-
+                print(f'Interaction effect for index {ind}: {self.dvalues[ind]}')
                 if fixed_context is None or fixed_context == 0:
                     # recurse on the left node with zero context
                     args = (m00, f00, f10, lind, new_weight)

@@ -132,6 +132,10 @@ class MaskedModel():
                 all_masked_inputs[i].append(masked_inputs[i])
         
         joined_masked_inputs = self._stack_inputs(all_masked_inputs)
+        #creating attention masks
+        for i,mask in enumerate(masks):
+            masks[i] = mask | ~self._variants[0]
+        self.model_kwargs_params['masks'] = masks
         outputs = self.model(*joined_masked_inputs,**self.model_kwargs_params)
         _assert_output_input_match(joined_masked_inputs, outputs)
 
