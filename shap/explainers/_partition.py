@@ -142,7 +142,8 @@ class Partition(Explainer):
         self.values = np.zeros(out_shape)
         self.dvalues = np.zeros(out_shape)
 
-        fixed_context = 1
+        fixed_context = fm.model_kwargs_params['fixed_context'] if 'fixed_context' in fm.model_kwargs_params else 1
+        #fixed_context = 1
         self.owen(fm, self._curr_base_value, f11, max_evals // 2 - 2, outputs, fixed_context, batch_size, silent)
 
         # if False:
