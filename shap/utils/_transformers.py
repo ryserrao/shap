@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import scipy as sp
 
+
 def get_teacher_forced_logits(model,input_ids,decoder_input_ids):
     with torch.no_grad():
         outputs = model(input_ids=input_ids, decoder_input_ids=decoder_input_ids, labels=decoder_input_ids, return_dict=True)

@@ -4,3 +4,4 @@ from ._general import shapley_coefficients, convert_name, format_value, ordinal_
 from ._show_progress import show_progress
 from ._masked_model import MaskedModel, make_masks
 from ._transformers import cal_conditional_logits
+from ._transformers1 import GenerateLogits
