@@ -19,7 +19,7 @@ from .. import links
 
 class Partition(Explainer):
     
-    def __init__(self, model, masker, *, partition_tree=None, output_names=None, link=links.identity, model_kwargs=None):
+    def __init__(self, model, masker, *, partition_tree=None, output_names=None, link=links.identity):
         """ Uses the Partition SHAP method to explain the output of any function.
 
         Partition SHAP computes Shapley values recursively through a hierarchy of features, this
@@ -65,7 +65,7 @@ class Partition(Explainer):
         See :ref:`Partition Explainer Examples <partition_explainer_examples>`
         """
 
-        super(Partition, self).__init__(model, masker, algorithm="partition", output_names = output_names, model_kwargs = model_kwargs)
+        super(Partition, self).__init__(model, masker, algorithm="partition", output_names = output_names)
 
         warnings.warn("explainers.Partition is still in an alpha state, so use with caution...")
         
@@ -107,12 +107,12 @@ class Partition(Explainer):
             self._clustering = self.masker.clustering
             self._mask_matrix = make_masks(self._clustering)
 
-    def explain_row(self, *row_args, max_evals, main_effects, error_bounds, batch_size, outputs, silent):
+    def explain_row(self, *row_args, max_evals, main_effects, error_bounds, batch_size, outputs, silent, **row_kwargs):
         """ Explains a single row and returns the tuple (row_values, row_expected_values, row_mask_shapes).
         """
 
         # build a masked version of the model for the current input sample
-        fm = MaskedModel(self.model, self.model_kwargs, self.masker, self.link, *row_args)
+        fm = MaskedModel(self.model, self.masker, self.link, *row_args, **row_kwargs)
 
         # make sure we have the base value and current value outputs
         M = len(fm)
@@ -142,7 +142,7 @@ class Partition(Explainer):
         self.values = np.zeros(out_shape)
         self.dvalues = np.zeros(out_shape)
 
-        fixed_context = 1
+        fixed_context = 1 if 'fixed_context' not in fm.model_kwargs else fm.model_kwargs['fixed_context']
         self.owen(fm, self._curr_base_value, f11, max_evals // 2 - 2, outputs, fixed_context, batch_size, silent)
 
         # if False:
