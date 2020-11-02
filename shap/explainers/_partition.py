@@ -142,7 +142,9 @@ class Partition(Explainer):
         self.values = np.zeros(out_shape)
         self.dvalues = np.zeros(out_shape)
 
-        fixed_context = 1
+        fm.model_kwargs['clust_mastrix'] = self._clustering
+        fm.model_kwargs['M'] = M
+        fixed_context = 1 if 'fixed_context' not in fm.model_kwargs else fm.model_kwargs['fixed_context']
         self.owen(fm, self._curr_base_value, f11, max_evals // 2 - 2, outputs, fixed_context, batch_size, silent)
 
         # if False:
@@ -228,6 +230,7 @@ class Partition(Explainer):
             # create a batch of work to do
             batch_args = []
             batch_masks = []
+            
             while not q.empty() and len(batch_masks) < batch_size and eval_count < npartitions:
                 
                 # get our next set of arguments
@@ -260,9 +263,12 @@ class Partition(Explainer):
                 batch_args.append((m00, m10, m01, f00, f11, ind, lind, rind, weight))
                 batch_masks.append(m10)
                 batch_masks.append(m01)
-            
-            batch_masks = np.array(batch_masks)
                 
+            batch_masks = np.array(batch_masks)
+            
+            #adding batch_args to model_kwargs
+            fm.model_kwargs['batch_args'] = batch_args
+
             # run the batch
             if len(batch_args) > 0:
                 fout = fm(batch_masks)

@@ -124,7 +124,8 @@ class GenerateLogits:
         # pass logits through softmax, get the token corresponding score and convert back to logit (as one vs all)
         for i in range(0,logits.shape[1]-1):
             probs = (np.exp(logits[0][i]).T / np.exp(logits[0][i]).sum(-1)).T
-            logit_dist = sp.special.logit(probs)
+            #logit_dist = sp.special.logit(probs)
+            logit_dist = probs
             conditional_logits.append(logit_dist[target_sentence_ids[0,i].item()])
         del source_sentence_ids
         return np.array(conditional_logits)
