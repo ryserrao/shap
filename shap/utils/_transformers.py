@@ -70,7 +70,7 @@ class GenerateLogits:
         else:
             # check if source sentence ids are null then add bos token id to decoder
             if source_sentence_ids.shape[1]==0:
-                if hasattr(self.model.config.bos_token_id) and self.model.config.bos_token_id is not None:
+                if hasattr(self.model.config,"bos_token_id") and self.model.config.bos_token_id is not None:
                     source_sentence_ids = torch.tensor([[self.model.config.bos_token_id]]).to(self.device)
                 else:
                     raise ValueError(
@@ -115,7 +115,7 @@ class GenerateLogits:
                 )
         return output_names
 
-    def generate_logits(self,source_sentence, target_sentence):
+    def generate_logits(self,source_sentence, target_sentence,return_dict=False):
         # get sentence ids
         source_sentence_ids, target_sentence_ids = self.get_sentence_ids(source_sentence,target_sentence)
         # generate logits
@@ -124,8 +124,15 @@ class GenerateLogits:
         # pass logits through softmax, get the token corresponding score and convert back to logit (as one vs all)
         for i in range(0,logits.shape[1]-1):
             probs = (np.exp(logits[0][i]).T / np.exp(logits[0][i]).sum(-1)).T
-            #logit_dist = sp.special.logit(probs)
-            logit_dist = probs
+            logit_dist = sp.special.logit(probs)
+            #logit_dist = probs
             conditional_logits.append(logit_dist[target_sentence_ids[0,i].item()])
-        del source_sentence_ids
-        return np.array(conditional_logits)
+        #del source_sentence_ids
+        if return_dict:
+            return {
+                'source_sentence_ids':source_sentence_ids.detach().cpu(),
+                'target_sentence_ids':target_sentence_ids.detach().cpu(),
+                'conditional_logits':np.array(conditional_logits)
+            }
+        else:
+            return np.array(conditional_logits)

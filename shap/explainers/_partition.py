@@ -120,6 +120,7 @@ class Partition(Explainer):
         if self._curr_base_value is None or getattr(self.masker, "fixed_background", False):
             self._curr_base_value = fm(m00.reshape(1,-1))[0]
         f11 = fm(~m00.reshape(1,-1))[0]
+        
 
         if callable(self.masker.clustering):
             self._clustering = self.masker.clustering(*row_args)

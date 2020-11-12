@@ -1,7 +1,7 @@
 import numpy as np
 from ._masker import Masker
 from ..utils import safe_isinstance
-
+import re
 class Text(Masker):
     """ This masks out tokens according to the given tokenizer.
 
@@ -82,7 +82,11 @@ class Text(Masker):
                 out = self._tokenized_s[mask]
             else:
                 out = np.array([self._tokenized_s[i] if mask[i] else self.mask_token_id for i in range(len(mask))])
-        
+        #Text infilling
+        if self.mask_token=='<infill>':
+            out=re.sub(r"([\.\s]*<infill>[\.\s]*)+","... ",out)
+            if sum(mask)==(self.keep_prefix+self.keep_suffix):
+                out=out.replace(" ","")
         return np.array([out])
 
         if self.output_type == "string":
